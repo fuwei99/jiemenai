@@ -16,7 +16,7 @@ from google.auth.transport.requests import Request as GoogleAuthRequest
 from .utils import get_user_agent, get_client_metadata
 from .config import (
     CLIENT_ID, CLIENT_SECRET, SCOPES, CREDENTIAL_FILE,
-    CODE_ASSIST_ENDPOINT, GEMINI_AUTH_PASSWORD
+    CODE_ASSIST_ENDPOINT, GEMINI_AUTH_PASSWORD, GEMINI_CREDENTIALS
 )
 
 # --- Global State ---
@@ -143,7 +143,7 @@ def get_credentials(allow_oauth_flow=True):
         return credentials
     
     # Check for credentials in environment variable (JSON string)
-    env_creds_json = os.getenv("GEMINI_CREDENTIALS")
+    env_creds_json = GEMINI_CREDENTIALS
     if env_creds_json:
         # First, check if we have a refresh token - if so, we should always be able to load credentials
         try:

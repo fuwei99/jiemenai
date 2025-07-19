@@ -40,9 +40,9 @@ async def startup_event():
         
         # Check if credentials exist
         import os
-        from .config import CREDENTIAL_FILE
+        from .config import CREDENTIAL_FILE, GEMINI_CREDENTIALS
         
-        env_creds_json = os.getenv("GEMINI_CREDENTIALS")
+        env_creds_json = GEMINI_CREDENTIALS
         creds_file_exists = os.path.exists(CREDENTIAL_FILE)
         
         if env_creds_json or creds_file_exists:
