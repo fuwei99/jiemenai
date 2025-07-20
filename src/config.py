@@ -3,6 +3,8 @@ Configuration constants for the Geminicli2api proxy server.
 Centralizes all configuration to avoid duplication across modules.
 """
 import os
+import json
+from itertools import cycle
 
 # API Endpoints
 CODE_ASSIST_ENDPOINT = "https://cloudcode-pa.googleapis.com"
@@ -27,7 +29,37 @@ CREDENTIAL_FILE = os.path.join(SCRIPT_DIR, os.getenv("LOCATION") or os.getenv("G
 GEMINI_AUTH_PASSWORD = os.getenv("PASSWORD") or os.getenv("GEMINI_AUTH_PASSWORD", "123456")
 
 # Credentials
-GEMINI_CREDENTIALS = os.getenv("JSON") or os.getenv("GEMINI_CREDENTIALS")
+GEMINI_CREDENTIALS_STR = os.getenv("JSON") or os.getenv("GEMINI_CREDENTIALS")
+
+def parse_credentials(credentials_str):
+    if not credentials_str:
+        return []
+    
+    # Split the string by '|' as the separator for JSON objects
+    cred_list = credentials_str.split('|')
+    
+    json_creds = []
+    for cred_str in cred_list:
+        # Skip empty strings that might result from splitting
+        if not cred_str.strip():
+            continue
+        try:
+            json_creds.append(json.loads(cred_str.strip()))
+        except json.JSONDecodeError:
+            # Handle cases where a credential might not be a valid JSON
+            # For now, we'll just ignore it.
+            pass
+    return json_creds
+
+GEMINI_CREDENTIALS_LIST = parse_credentials(GEMINI_CREDENTIALS_STR)
+GEMINI_CREDENTIALS_CYCLE = cycle(GEMINI_CREDENTIALS_LIST) if GEMINI_CREDENTIALS_LIST else None
+
+def get_next_credential():
+    if GEMINI_CREDENTIALS_CYCLE:
+        return next(GEMINI_CREDENTIALS_CYCLE)
+    return None
+
+GEMINI_CREDENTIALS = get_next_credential() if GEMINI_CREDENTIALS_LIST else None
 
 # Default Safety Settings for Google API
 DEFAULT_SAFETY_SETTINGS = [

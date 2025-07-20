@@ -38,16 +38,14 @@ async def startup_event():
     try:
         logging.info("Starting Gemini proxy server...")
         
-        # Check if credentials exist
-        import os
-        from .config import CREDENTIAL_FILE, GEMINI_CREDENTIALS
+        # Check if credentials exist (either in env var or file)
+        from .config import CREDENTIAL_FILE, GEMINI_CREDENTIALS_LIST
         
-        env_creds_json = GEMINI_CREDENTIALS
-        creds_file_exists = os.path.exists(CREDENTIAL_FILE)
+        creds_available = bool(GEMINI_CREDENTIALS_LIST) or os.path.exists(CREDENTIAL_FILE)
         
-        if env_creds_json or creds_file_exists:
+        if creds_available:
             try:
-                # Try to load existing credentials without OAuth flow first
+                # Try to load existing credentials without starting a new OAuth flow
                 creds = get_credentials(allow_oauth_flow=False)
                 if creds:
                     try:
@@ -55,13 +53,12 @@ async def startup_event():
                         if proj_id:
                             onboard_user(creds, proj_id)
                             logging.info(f"Successfully onboarded with project ID: {proj_id}")
-                        logging.info("Gemini proxy server started successfully")
-                        logging.info("Authentication required - Password: see .env file")
+                        logging.info("Gemini proxy server started successfully.")
                     except Exception as e:
-                        logging.error(f"Setup failed: {str(e)}")
+                        logging.error(f"Setup failed during onboarding: {str(e)}")
                         logging.warning("Server started but may not function properly until setup issues are resolved.")
                 else:
-                    logging.warning("Credentials file exists but could not be loaded. Server started - authentication will be required on first request.")
+                    logging.warning("Credentials available but could not be loaded. Server started, but authentication may be required on the first request.")
             except Exception as e:
                 logging.error(f"Credential loading error: {str(e)}")
                 logging.warning("Server started but credentials need to be set up.")
@@ -76,20 +73,20 @@ async def startup_event():
                         if proj_id:
                             onboard_user(creds, proj_id)
                             logging.info(f"Successfully onboarded with project ID: {proj_id}")
-                        logging.info("Gemini proxy server started successfully")
+                        logging.info("Gemini proxy server started successfully after authentication.")
                     except Exception as e:
-                        logging.error(f"Setup failed: {str(e)}")
+                        logging.error(f"Setup failed after authentication: {str(e)}")
                         logging.warning("Server started but may not function properly until setup issues are resolved.")
                 else:
                     logging.error("Authentication failed. Server started but will not function until credentials are provided.")
             except Exception as e:
-                logging.error(f"Authentication error: {str(e)}")
+                logging.error(f"Authentication error during startup: {str(e)}")
                 logging.warning("Server started but authentication failed.")
         
-        logging.info("Authentication required - Password: see .env file")
+        logging.info("Authentication required - Password: see .env file or config")
         
     except Exception as e:
-        logging.error(f"Startup error: {str(e)}")
+        logging.error(f"Fatal startup error: {str(e)}")
         logging.warning("Server may not function properly.")
 
 @app.options("/{full_path:path}")
